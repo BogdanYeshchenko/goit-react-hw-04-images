@@ -4,7 +4,7 @@ import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from './Button/Button';
 import { Loader } from './Loader/Loader';
 import { Modal } from './Modal/Modal';
-import PropTypes from 'prop-types';
+
 import { searchData } from '../service/SearchData/SearchData';
 import { useImg } from 'Context/SearchImgContext';
 
