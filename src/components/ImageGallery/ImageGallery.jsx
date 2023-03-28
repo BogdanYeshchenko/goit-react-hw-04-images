@@ -1,7 +1,16 @@
 import './ImageGallery.css';
 import PropTypes from 'prop-types';
+import { useImg } from 'Context/SearchImgContext';
 
-export const ImageGallery = ({ data, hendleClickToImage }) => {
+export const ImageGallery = ({ data }) => {
+  const { appointIsModalOpen, appointLargeimage, appointTags } = useImg();
+
+  const hendleClickToImage = e => {
+    appointIsModalOpen(true);
+    appointLargeimage(e.target.dataset.largeimage);
+    appointTags(e.target.dataset.tags);
+  };
+
   return (
     <>
       <ul className="ImageGallery ">
@@ -13,7 +22,7 @@ export const ImageGallery = ({ data, hendleClickToImage }) => {
               src={el.webformatURL}
               alt={el.tags}
               data-largeimage={el.largeImageURL}
-              data-tegs={el.tags}
+              data-tags={el.tags}
             />
           </li>
         ))}
@@ -24,5 +33,4 @@ export const ImageGallery = ({ data, hendleClickToImage }) => {
 
 ImageGallery.propTypes = {
   data: PropTypes.array.isRequired,
-  hendleClickToImage: PropTypes.func.isRequired,
 };

@@ -1,57 +1,41 @@
-import { Component } from 'react';
+import { useEffect } from 'react';
 import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from './Button/Button';
 import { Loader } from './Loader/Loader';
 import { Modal } from './Modal/Modal';
-
+import PropTypes from 'prop-types';
 import { searchData } from '../service/SearchData/SearchData';
+import { useImg } from 'Context/SearchImgContext';
 
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-export class App extends Component {
-  state = {
-    searchWord: '',
-    page: 1,
-    data: [],
-    totalHits: 0,
-    largeimage: '',
-    tags: '',
-    isModalOpen: false,
-    isLoding: false,
-  };
+export const App = () => {
+  const {
+    searchWord,
+    page,
+    data,
+    totalHits,
+    largeimage,
+    tags,
+    isModalOpen,
+    isLoding,
+    addPageWithPrev,
+    addDataWithPrev,
+    appointIsLoding,
+    appointTotalHits,
+  } = useImg();
 
-  componentDidMount() {
-    window.addEventListener('keydown', this.handlePressKeybord);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handlePressKeybord);
-  }
-
-  handlePressKeybord = e => {
-    if (e.code === 'Escape') {
-      this.setState({ isModalOpen: false });
-    }
-  };
-
-  handleSubmit = value => {
-    this.setState({ searchWord: value, page: 1, data: [] });
-  };
-
-  async componentDidUpdate(_, prevState) {
-    const { searchWord, page, totalHits } = this.state;
-    if (prevState.page !== page || prevState.searchWord !== searchWord) {
+  useEffect(() => {
+    const downloadImgBySubmit = async () => {
       try {
-        this.setState({ isLoding: true });
+        appointIsLoding(true);
         const answer = await searchData(searchWord, page);
         const answerJson = await answer.json();
 
-        this.setState(prev => ({
-          data: [...prev.data, ...answerJson.hits],
-          totalHits: Math.ceil(answerJson.totalHits / 12),
-        }));
+        appointTotalHits(Math.ceil(answerJson.totalHits / 12));
+        addDataWithPrev(answerJson.hits);
 
         if (answerJson.totalHits === 0) {
           toast.warn('Do not faund any images', {
@@ -74,56 +58,33 @@ export class App extends Component {
         toast.error(error.message);
         console.error(error.message);
       } finally {
-        this.setState({ isLoding: false });
+        appointIsLoding(false);
       }
+    };
+
+    if (searchWord) {
+      downloadImgBySubmit();
     }
-  }
 
-  handleLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, searchWord]);
+
+  const handleLoadMore = () => {
+    addPageWithPrev(1);
   };
 
-  hendleClickToImage = e => {
-    this.setState({
-      largeimage: e.target.dataset.largeimage,
-      tags: e.target.dataset.tags,
-      isModalOpen: true,
-    });
-  };
+  return (
+    <div>
+      {isModalOpen && <Modal largeimage={largeimage} tags={tags} />}
+      <Searchbar />
+      {data && <ImageGallery data={data} />}
+      {isLoding && <Loader />}
 
-  handleClicOnBackDrop = e => {
-    if (e.target.dataset.backdrop) {
-      this.setState({ isModalOpen: false });
-    }
-  };
+      {page < totalHits && data.length > 0 && (
+        <Button handleLoadMore={handleLoadMore} />
+      )}
 
-  render() {
-    const { page, data, totalHits, isLoding, largeimage, tags, isModalOpen } =
-      this.state;
-    return (
-      <div>
-        {isModalOpen && (
-          <Modal
-            largeimage={largeimage}
-            tags={tags}
-            handleClicOnBackDrop={this.handleClicOnBackDrop}
-          />
-        )}
-        <Searchbar handleSubmit={this.handleSubmit} />
-        {data && (
-          <ImageGallery
-            data={data}
-            hendleClickToImage={this.hendleClickToImage}
-          />
-        )}
-        {isLoding && <Loader />}
-
-        {page < totalHits && data.length > 0 && (
-          <Button handleLoadMore={this.handleLoadMore} />
-        )}
-
-        <ToastContainer />
-      </div>
-    );
-  }
-}
+      <ToastContainer />
+    </div>
+  );
+};
